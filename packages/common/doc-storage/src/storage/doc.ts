@@ -1,8 +1,10 @@
 import {
   applyUpdate,
+  diffUpdate,
   Doc,
   encodeStateAsUpdate,
   encodeStateVector,
+  encodeStateVectorFromUpdate,
   mergeUpdates,
   UndoManager,
 } from 'yjs';
@@ -16,6 +18,12 @@ export interface DocRecord {
   bin: Uint8Array;
   timestamp: number;
   editor?: string;
+}
+
+export interface DocDiff {
+  missing: Uint8Array;
+  state: Uint8Array;
+  timestamp: number;
 }
 
 export interface DocUpdate {
@@ -40,6 +48,10 @@ export interface DocStorageOptions {
 
 export abstract class DocStorageAdapter extends Connection {
   private readonly locker = new SingletonLocker();
+  protected abstract readonly spaceId: string;
+  protected readonly updatesListeners = new Set<
+    (docId: string, updates: Uint8Array[], timestamp: number) => void
+  >();
 
   constructor(
     protected readonly options: DocStorageOptions = {
@@ -60,11 +72,11 @@ export abstract class DocStorageAdapter extends Connection {
     );
   }
 
-  async getDoc(spaceId: string, docId: string): Promise<DocRecord | null> {
-    await using _lock = await this.lockDocForUpdate(spaceId, docId);
+  async getDoc(docId: string): Promise<DocRecord | null> {
+    await using _lock = await this.lockDocForUpdate(docId);
 
-    const snapshot = await this.getDocSnapshot(spaceId, docId);
-    const updates = await this.getDocUpdates(spaceId, docId);
+    const snapshot = await this.getDocSnapshot(docId);
+    const updates = await this.getDocUpdates(docId);
 
     if (updates.length) {
       const { timestamp, bin, editor } = await this.squash(
@@ -72,7 +84,7 @@ export abstract class DocStorageAdapter extends Connection {
       );
 
       const newSnapshot = {
-        spaceId: spaceId,
+        spaceId: this.spaceId,
         docId,
         bin,
         timestamp,
@@ -87,7 +99,7 @@ export abstract class DocStorageAdapter extends Connection {
       }
 
       // always mark updates as merged unless throws
-      await this.markUpdatesMerged(spaceId, docId, updates);
+      await this.markUpdatesMerged(docId, updates);
 
       return newSnapshot;
     }
@@ -95,66 +107,94 @@ export abstract class DocStorageAdapter extends Connection {
     return snapshot;
   }
 
+  async getDocDiff(
+    docId: string,
+    stateVector?: Uint8Array
+  ): Promise<DocDiff | null> {
+    const doc = await this.getDoc(docId);
+
+    if (!doc) {
+      return null;
+    }
+
+    const missing = stateVector ? diffUpdate(doc.bin, stateVector) : doc.bin;
+    const state = encodeStateVectorFromUpdate(doc.bin);
+
+    return {
+      missing,
+      state,
+      timestamp: doc.timestamp,
+    };
+  }
+
   abstract pushDocUpdates(
-    spaceId: string,
     docId: string,
     updates: Uint8Array[],
     editorId?: string
   ): Promise<number>;
 
-  abstract deleteDoc(spaceId: string, docId: string): Promise<void>;
-  abstract deleteSpace(spaceId: string): Promise<void>;
+  onReceiveDocUpdates(
+    listener: (docId: string, updates: Uint8Array[], timestamp: number) => void
+  ): () => void {
+    this.updatesListeners.add(listener);
+
+    return () => {
+      this.updatesListeners.delete(listener);
+    };
+  }
+
+  protected dispatchDocUpdatesListeners(
+    docId: string,
+    updates: Uint8Array[],
+    timestamp: number
+  ): void {
+    this.updatesListeners.forEach(cb => {
+      cb(docId, updates, timestamp);
+    });
+  }
+
+  abstract deleteDoc(docId: string): Promise<void>;
+  abstract deleteSpace(): Promise<void>;
   async rollbackDoc(
-    spaceId: string,
     docId: string,
     timestamp: number,
     editorId?: string
   ): Promise<void> {
-    await using _lock = await this.lockDocForUpdate(spaceId, docId);
-    const toSnapshot = await this.getDocHistory(spaceId, docId, timestamp);
+    await using _lock = await this.lockDocForUpdate(docId);
+    const toSnapshot = await this.getDocHistory(docId, timestamp);
     if (!toSnapshot) {
       throw new Error('Can not find the version to rollback to.');
     }
 
-    const fromSnapshot = await this.getDocSnapshot(spaceId, docId);
+    const fromSnapshot = await this.getDocSnapshot(docId);
 
     if (!fromSnapshot) {
       throw new Error('Can not find the current version of the doc.');
     }
 
     const change = this.generateChangeUpdate(fromSnapshot.bin, toSnapshot.bin);
-    await this.pushDocUpdates(spaceId, docId, [change], editorId);
+    await this.pushDocUpdates(docId, [change], editorId);
     // force create a new history record after rollback
     await this.createDocHistory(fromSnapshot, true);
   }
 
   abstract getSpaceDocTimestamps(
-    spaceId: string,
     after?: number
   ): Promise<Record<string, number> | null>;
   abstract listDocHistories(
-    spaceId: string,
     docId: string,
     query: { skip?: number; limit?: number }
   ): Promise<{ timestamp: number; editor: Editor | null }[]>;
   abstract getDocHistory(
-    spaceId: string,
     docId: string,
     timestamp: number
   ): Promise<DocRecord | null>;
 
   // api for internal usage
-  protected abstract getDocSnapshot(
-    spaceId: string,
-    docId: string
-  ): Promise<DocRecord | null>;
+  protected abstract getDocSnapshot(docId: string): Promise<DocRecord | null>;
   protected abstract setDocSnapshot(snapshot: DocRecord): Promise<boolean>;
-  protected abstract getDocUpdates(
-    spaceId: string,
-    docId: string
-  ): Promise<DocUpdate[]>;
+  protected abstract getDocUpdates(docId: string): Promise<DocUpdate[]>;
   protected abstract markUpdatesMerged(
-    spaceId: string,
     docId: string,
     updates: DocUpdate[]
   ): Promise<number>;
@@ -185,11 +225,8 @@ export abstract class DocStorageAdapter extends Connection {
     };
   }
 
-  protected async lockDocForUpdate(
-    spaceId: string,
-    docId: string
-  ): Promise<AsyncDisposable> {
-    return this.locker.lock(`workspace:${spaceId}:update`, docId);
+  protected async lockDocForUpdate(docId: string): Promise<AsyncDisposable> {
+    return this.locker.lock(`workspace:${this.spaceId}:update`, docId);
   }
 
   protected generateChangeUpdate(newerBin: Uint8Array, olderBin: Uint8Array) {
@@ -212,3 +249,5 @@ export abstract class DocStorageAdapter extends Connection {
     return encodeStateAsUpdate(olderDoc, newerState);
   }
 }
+
+export abstract class IsolatedDocStorageAdapter extends DocStorageAdapter {}
