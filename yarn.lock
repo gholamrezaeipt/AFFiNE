@@ -643,6 +643,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@affine/pdf@workspace:packages/frontend/pdf":
+  version: 0.0.0-use.local
+  resolution: "@affine/pdf@workspace:packages/frontend/pdf"
+  dependencies:
+    "@blocksuite/affine": "npm:0.17.17"
+    "@napi-rs/cli": "npm:3.0.0-alpha.62"
+    "@types/node": "npm:^20.12.7"
+    typescript: "npm:^5.4.5"
+    vitest: "npm:2.1.1"
+  languageName: unknown
+  linkType: soft
+
 "@affine/server-native@workspace:*, @affine/server-native@workspace:packages/backend/native":
   version: 0.0.0-use.local
   resolution: "@affine/server-native@workspace:packages/backend/native"

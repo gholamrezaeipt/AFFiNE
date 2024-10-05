@@ -7,6 +7,7 @@
   "workspaces": [
     ".",
     "packages/*/*",
+    "packages/frontend/pdf",
     "packages/frontend/apps/*",
     "tools/*",
     "docs/reference",

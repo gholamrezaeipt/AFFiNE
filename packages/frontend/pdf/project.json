@@ -1,0 +1,25 @@
+{
+  "name": "@affine/pdf",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "root": "packages/frontend/pdf",
+  "sourceRoot": "packages/frontend/pdf/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-script",
+      "dependsOn": ["^build"],
+      "options": {
+        "script": "build"
+      },
+      "inputs": [
+        {
+          "runtime": "rustc --version"
+        },
+        {
+          "runtime": "node -v"
+        }
+      ],
+      "outputs": ["{projectRoot}/*.node"]
+    }
+  }
+}

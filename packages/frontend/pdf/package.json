@@ -1,0 +1,40 @@
+{
+  "name": "@affine/pdf",
+  "private": true,
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "binaryName": "affine-pdf",
+    "targets": [
+      "x86_64-apple-darwin",
+      "x86_64-unknown-linux-gnu",
+      "x86_64-pc-windows-msvc",
+      "aarch64-apple-darwin",
+      "aarch64-unknown-linux-gnu",
+      "aarch64-pc-windows-msvc",
+      "wasm32-wasip1-threads"
+    ],
+    "ts": {
+      "constEnum": false
+    }
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@blocksuite/affine": "0.17.17",
+    "@napi-rs/cli": "3.0.0-alpha.62",
+    "@types/node": "^20.12.7",
+    "typescript": "^5.4.5",
+    "vitest": "2.1.1"
+  },
+  "engines": {
+    "node": ">= 10"
+  },
+  "scripts": {
+    "artifacts": "napi artifacts",
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "universal": "napi universal",
+    "version": "napi version"
+  },
+  "version": "0.17.0"
+}

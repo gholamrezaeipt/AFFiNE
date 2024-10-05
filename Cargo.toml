@@ -1,5 +1,10 @@
 [workspace]
-members  = ["./packages/backend/native", "./packages/frontend/native", "./packages/frontend/native/schema"]
+members  = [
+  "./packages/backend/native",
+  "./packages/frontend/native",
+  "./packages/frontend/native/schema",
+  "./packages/frontend/pdf"
+]
 resolver = "2"
 
 [workspace.dependencies]

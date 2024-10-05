@@ -1,0 +1,23 @@
+[package]
+edition = "2021"
+name    = "affine_pdf"
+version = "0.0.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+pdfium-render = { path = "../../../../pdfium-render" }
+chrono        = { workspace = true }
+anyhow        = { workspace = true }
+napi          = { workspace = true }
+napi-derive   = { workspace = true }
+notify        = { workspace = true, features = ["serde"] }
+serde         = { workspace = true }
+serde_json    = { workspace = true }
+tokio         = { workspace = true, features = ["full"] }
+
+[build-dependencies]
+dotenv        = { workspace = true }
+napi-build    = { workspace = true }
+tokio         = { workspace = true, features = ["full"] }
