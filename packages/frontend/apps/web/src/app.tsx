@@ -1,3 +1,4 @@
+import {useEffect} from "react";
 import { AffineContext } from '@affine/component/context';
 import { GlobalLoading } from '@affine/component/global-loading';
 import { AppFallback } from '@affine/core/components/affine/app-container';
@@ -52,7 +53,46 @@ const frameworkProvider = framework.provider();
 window.addEventListener('focus', () => {
   frameworkProvider.get(LifecycleService).applicationFocus();
 });
+
 frameworkProvider.get(LifecycleService).applicationStart();
+
+useEffect(() => {(
+  function detectTextDirection(element) {
+        const text = element.textContent;
+
+        if (
+            /[\u0600-\u06FF\u0750-\u077F\u0590-\u05FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
+                text
+            )
+        ) {
+            element.style.direction = "rtl";
+            element.style.textAlign = 'right';
+        }
+}
+
+const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+            // Your code to handle the change
+          const elemets = document.querySelectorAll("v-line");
+
+          elemets.forEach((element) => {
+            detectTextDirection(element);
+      });
+        }
+    });
+});
+
+// Options for the observer (which mutations to observe)
+const config = {
+    childList: true,
+    subtree: true // Observe all child nodes
+};
+
+// Start observing the target node (e.g., document.body)
+observer.observe(document.body, config);
+)}, [])
+
 
 export function App() {
   if (!languageLoadingPromise) {
