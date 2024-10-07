@@ -35,23 +35,30 @@ export class OpenAIProvider
   static readonly capabilities = [
     CopilotCapability.TextToText,
     CopilotCapability.TextToEmbedding,
-    CopilotCapability.TextToImage,
-    CopilotCapability.ImageToText,
+    //CopilotCapability.TextToImage,
+    //CopilotCapability.ImageToText,
   ];
+
+  // readonly availableModels = [
+  //   // text to text
+  //   'gpt-4o',
+  //   'gpt-4o-mini',
+  //   // embeddings
+  //   'text-embedding-3-large',
+  //   'text-embedding-3-small',
+  //   'text-embedding-ada-002',
+  //   // moderation
+  //   'text-moderation-latest',
+  //   'text-moderation-stable',
+  //   // text to image
+  //   'dall-e-3',
+  // ];
 
   readonly availableModels = [
     // text to text
-    'gpt-4o',
-    'gpt-4o-mini',
+    'gemma2:latest',
     // embeddings
-    'text-embedding-3-large',
-    'text-embedding-3-small',
-    'text-embedding-ada-002',
-    // moderation
-    'text-moderation-latest',
-    'text-moderation-stable',
-    // text to image
-    'dall-e-3',
+    'nomic-embed-text:latest'
   ];
 
   private readonly logger = new Logger(OpenAIProvider.type);
@@ -200,7 +207,8 @@ export class OpenAIProvider
   // ====== text to text ======
   async generateText(
     messages: PromptMessage[],
-    model: string = 'gpt-4o-mini',
+    //model: string = 'gpt-4o-mini',
+    model: string = 'gemma2:latest',
     options: CopilotChatOptions = {}
   ): Promise<string> {
     this.checkParams({ messages, model, options });
@@ -229,7 +237,8 @@ export class OpenAIProvider
 
   async *generateTextStream(
     messages: PromptMessage[],
-    model: string = 'gpt-4o-mini',
+    //model: string = 'gpt-4o-mini',
+    model: string = 'gemma2:latest',
     options: CopilotChatOptions = {}
   ): AsyncIterable<string> {
     this.checkParams({ messages, model, options });
