@@ -285,7 +285,8 @@ export class OpenAIProvider
 
   async generateEmbedding(
     messages: string | string[],
-    model: string,
+    //model: string,
+    model: string = 'nomic-embed-text:latest',
     options: CopilotEmbeddingOptions = { dimensions: DEFAULT_DIMENSIONS }
   ): Promise<number[][]> {
     messages = Array.isArray(messages) ? messages : [messages];
