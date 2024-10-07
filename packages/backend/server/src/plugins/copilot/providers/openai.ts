@@ -35,8 +35,8 @@ export class OpenAIProvider
   static readonly capabilities = [
     CopilotCapability.TextToText,
     CopilotCapability.TextToEmbedding,
-    //CopilotCapability.TextToImage,
-    //CopilotCapability.ImageToText,
+    CopilotCapability.TextToImage,
+    CopilotCapability.ImageToText,
   ];
 
   // readonly availableModels = [
