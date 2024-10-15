@@ -318,7 +318,8 @@ export class OpenAIProvider
       const result = await this.instance.images.generate(
         {
           prompt,
-          model,
+          //model,
+          'llava:7b',
           response_format: 'url',
           user: options.user,
         },
