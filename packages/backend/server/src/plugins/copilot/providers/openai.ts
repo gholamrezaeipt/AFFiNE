@@ -39,27 +39,27 @@ export class OpenAIProvider
     CopilotCapability.ImageToText,
   ];
 
-  // readonly availableModels = [
-  //   // text to text
-  //   'gpt-4o',
-  //   'gpt-4o-mini',
-  //   // embeddings
-  //   'text-embedding-3-large',
-  //   'text-embedding-3-small',
-  //   'text-embedding-ada-002',
-  //   // moderation
-  //   'text-moderation-latest',
-  //   'text-moderation-stable',
-  //   // text to image
-  //   'dall-e-3',
-  // ];
-
   readonly availableModels = [
     // text to text
-    'gemma2:latest',
+    'gpt-4o',
+    'gpt-4o-mini',
     // embeddings
-    'nomic-embed-text:latest'
+    'text-embedding-3-large',
+    'text-embedding-3-small',
+    'text-embedding-ada-002',
+    // moderation
+    'text-moderation-latest',
+    'text-moderation-stable',
+    // text to image
+    'dall-e-3',
   ];
+
+  // readonly availableModels = [
+  //   // text to text
+  //   'gemma2:latest',
+  //   // embeddings
+  //   'nomic-embed-text:latest'
+  // ];
 
   private readonly logger = new Logger(OpenAIProvider.type);
   private readonly instance: OpenAI;
@@ -207,8 +207,7 @@ export class OpenAIProvider
   // ====== text to text ======
   async generateText(
     messages: PromptMessage[],
-    //model: string = 'gpt-4o-mini',
-    model: string = 'gemma2:latest',
+    model: string = 'gpt-4o-mini',
     options: CopilotChatOptions = {}
   ): Promise<string> {
     this.checkParams({ messages, model, options });
@@ -217,7 +216,8 @@ export class OpenAIProvider
       const result = await this.instance.chat.completions.create(
         {
           messages: this.chatToGPTMessage(messages),
-          model: model,
+          // model: model,
+          model: 'gemma2:latest',
           temperature: options.temperature || 0,
           max_tokens: options.maxTokens || 4096,
           response_format: {
@@ -237,8 +237,7 @@ export class OpenAIProvider
 
   async *generateTextStream(
     messages: PromptMessage[],
-    //model: string = 'gpt-4o-mini',
-    model: string = 'gemma2:latest',
+    model: string = 'gpt-4o-mini',
     options: CopilotChatOptions = {}
   ): AsyncIterable<string> {
     this.checkParams({ messages, model, options });
@@ -248,7 +247,8 @@ export class OpenAIProvider
         {
           stream: true,
           messages: this.chatToGPTMessage(messages),
-          model: model,
+          // model: model,
+          model: 'gemma2:latest',
           frequency_penalty: options.frequencyPenalty || 0,
           presence_penalty: options.presencePenalty || 0,
           temperature: options.temperature || 0.5,
@@ -285,8 +285,7 @@ export class OpenAIProvider
 
   async generateEmbedding(
     messages: string | string[],
-    //model: string,
-    model: string = 'nomic-embed-text:latest',
+    model: string,
     options: CopilotEmbeddingOptions = { dimensions: DEFAULT_DIMENSIONS }
   ): Promise<number[][]> {
     messages = Array.isArray(messages) ? messages : [messages];
@@ -294,7 +293,8 @@ export class OpenAIProvider
 
     try {
       const result = await this.instance.embeddings.create({
-        model: model,
+        // model: model,
+        model: 'nomic-embed-text:latest',
         input: messages,
         dimensions: options.dimensions || DEFAULT_DIMENSIONS,
         user: options.user,
