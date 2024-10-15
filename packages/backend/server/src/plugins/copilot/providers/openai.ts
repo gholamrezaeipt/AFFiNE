@@ -313,13 +313,14 @@ export class OpenAIProvider
   ): Promise<Array<string>> {
     const { content: prompt } = messages.pop() || {};
     if (!prompt) throw new CopilotPromptInvalid('Prompt is required');
+    
+    model = 'llava:7b';
 
     try {
       const result = await this.instance.images.generate(
         {
           prompt,
-          //model,
-          'llava:7b',
+          model,
           response_format: 'url',
           user: options.user,
         },
