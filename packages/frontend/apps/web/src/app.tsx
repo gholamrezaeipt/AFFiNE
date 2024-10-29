@@ -15,6 +15,7 @@ import {
   configureIndexedDBWorkspaceEngineStorageProvider,
 } from '@affine/core/modules/workspace-engine';
 import createEmotionCache from '@affine/core/utils/create-emotion-cache';
+import { createI18n, setUpLanguage } from '@affine/i18n';
 import { CacheProvider } from '@emotion/react';
 import {
   Framework,
@@ -22,7 +23,7 @@ import {
   getCurrentStore,
   LifecycleService,
 } from '@toeverything/infra';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
 
 const cache = createEmotionCache();
@@ -30,6 +31,15 @@ const cache = createEmotionCache();
 const future = {
   v7_startTransition: true,
 } as const;
+
+async function loadLanguage() {
+  const i18n = createI18n();
+  document.documentElement.lang = i18n.language;
+
+  await setUpLanguage(i18n);
+}
+
+let languageLoadingPromise: Promise<void> | null = null;
 
 const framework = new Framework();
 configureCommonModules(framework);
@@ -63,9 +73,63 @@ const frameworkProvider = framework.provider();
 window.addEventListener('focus', () => {
   frameworkProvider.get(LifecycleService).applicationFocus();
 });
+
 frameworkProvider.get(LifecycleService).applicationStart();
 
+const UseDetectTextDirection = (): void => {
+  useEffect(() => {
+    const detectTextDirection = (element: Element): void => {
+      const text = element.textContent || '';
+
+      // eslint-disable-next-line sonarjs/no-collapsible-if
+      if (
+        /[\u0600-\u06FF\u0750-\u077F\u0590-\u05FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
+          text
+        )
+      ) {
+        if (element instanceof HTMLElement) {
+          element.style.direction = 'rtl';
+          element.style.textAlign = 'right';
+        }
+      }
+    };
+
+    const observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        if (mutation.type === 'childList') {
+          const elements = document.querySelectorAll('v-line');
+
+          elements.forEach(element => {
+            detectTextDirection(element);
+          });
+        }
+      });
+    });
+
+    const config: MutationObserverInit = {
+      childList: true,
+      subtree: true, // Observe all child nodes
+    };
+
+    // Start observing the target node (e.g., document.body)
+    if (document.body) {
+      observer.observe(document.body, config);
+    }
+
+    // Cleanup function
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+};
+
 export function App() {
+  if (!languageLoadingPromise) {
+    languageLoadingPromise = loadLanguage().catch(console.error);
+  }
+
+  UseDetectTextDirection();
+
   return (
     <Suspense>
       <FrameworkRoot framework={frameworkProvider}>

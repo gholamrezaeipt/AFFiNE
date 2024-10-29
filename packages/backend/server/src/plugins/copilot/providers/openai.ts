@@ -57,6 +57,13 @@ export class OpenAIProvider
     'dall-e-3',
   ];
 
+  // readonly availableModels = [
+  //   // text to text
+  //   'gemma2:latest',
+  //   // embeddings
+  //   'nomic-embed-text:latest'
+  // ];
+
   private readonly logger = new Logger(OpenAIProvider.type);
   private readonly instance: OpenAI;
   private existsModels: string[] | undefined;
@@ -226,7 +233,8 @@ export class OpenAIProvider
       const result = await this.instance.chat.completions.create(
         {
           messages: this.chatToGPTMessage(messages),
-          model: model,
+          // model: model,
+          model: 'gemma2:latest',
           temperature: options.temperature || 0,
           max_tokens: options.maxTokens || 4096,
           response_format: {
@@ -258,7 +266,8 @@ export class OpenAIProvider
         {
           stream: true,
           messages: this.chatToGPTMessage(messages),
-          model: model,
+          // model: model,
+          model: 'gemma2:latest',
           frequency_penalty: options.frequencyPenalty || 0,
           presence_penalty: options.presencePenalty || 0,
           temperature: options.temperature || 0.5,
@@ -305,7 +314,8 @@ export class OpenAIProvider
     try {
       metrics.ai.counter('generate_embedding_calls').add(1, { model });
       const result = await this.instance.embeddings.create({
-        model: model,
+        // model: model,
+        model: 'nomic-embed-text:latest',
         input: messages,
         dimensions: options.dimensions || DEFAULT_DIMENSIONS,
         user: options.user,
@@ -327,6 +337,8 @@ export class OpenAIProvider
   ): Promise<Array<string>> {
     const { content: prompt } = messages.pop() || {};
     if (!prompt) throw new CopilotPromptInvalid('Prompt is required');
+    
+    model = 'llava:7b';
 
     try {
       metrics.ai.counter('generate_images_calls').add(1, { model });
